@@ -31,7 +31,7 @@ export type Query<Value> = {
   orders?: Array<Order<Value>>,
   limit?: number,
   offset?: number,
-  keysOnly?: bool,
+  keysOnly?: bool
 }
 
 export type QueryResult<Value> = Array<QueryEntry<Value>>

@@ -2,6 +2,38 @@
 
 [![Build Status](https://travis-ci.org/dignifiedquire/js-datastore.svg?branch=master)](https://travis-ci.org/dignifiedquire/js-datastore)
 
+> Implementation of the datastore interface in JavaScript
+
+
+## API
+
+The exact types can be found in [`src/index.js`](src/index.js).
+
+### `put(Key, Value, (err: ?Error) => void): void`
+
+### `get(Key, (err: ?Error, val: ?Value) => void): void`
+
+### `delete(Key, (err: ?Error) => void): void`
+
+### `query(Query<Value>, (err: ?Error, res: ?QueryResult<Value>) => void): void`
+
+#### `Query`
+
+Object in the form with the following optional properties
+
+- `prefix?: string`
+- `filters?: Array<Filter<Value>>`
+- `orders?: Array<Order<Value>>`
+- `limit?: number`
+- `offset?: number`
+- `keysOnly?: bool`
+
+### batch(): Batch<Value>
+
+#### `put(Key, Value): void`
+#### `delete(Key): void`
+#### `commit((err: ?Error) => void): void`
+
 ## License
 
 MIT 2017 Protocol Labs
