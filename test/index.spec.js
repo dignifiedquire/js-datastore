@@ -27,6 +27,29 @@ describe('datastore', () => {
 
         store.put(k, new Buffer('one'), done)
       })
+
+      it('parallel', (done) => {
+        const store = new Store()
+        const data = []
+        for (let i = 0; i < 100; i++) {
+          data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
+        }
+
+        each(data, (d, cb) => {
+          store.put(d[0], d[1], cb)
+        }, (err) => {
+          expect(err).to.not.exist
+          map(data, (d, cb) => {
+            store.get(d[0], cb)
+          }, (err, res) => {
+            expect(err).to.not.exist
+            res.forEach((res, i) => {
+              expect(res).to.be.eql(data[i][1])
+            })
+            done()
+          })
+        })
+      })
     })
 
     describe('get', () => {
@@ -63,7 +86,43 @@ describe('datastore', () => {
           })
         ], done)
       })
+
+      it('parallel', (done) => {
+        const store = new Store()
+        const data = []
+        for (let i = 0; i < 100; i++) {
+          data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
+        }
+
+        series([
+          (cb) => each(data, (d, cb) => {
+            store.put(d[0], d[1], cb)
+          }, cb),
+          (cb) => map(data, (d, cb) => {
+            store.has(d[0], cb)
+          }, (err, res) => {
+            expect(err).to.not.exist
+            res.forEach((res, i) => {
+              expect(res).to.be.eql(true)
+            })
+            cb()
+          }),
+          (cb) => each(data, (d, cb) => {
+            store.delete(d[0], cb)
+          }, cb),
+          (cb) => map(data, (d, cb) => {
+            store.has(d[0], cb)
+          }, (err, res) => {
+            expect(err).to.not.exist
+            res.forEach((res, i) => {
+              expect(res).to.be.eql(false)
+            })
+            cb()
+          })
+        ], done)
+      })
     })
+
 
     describe('batch', () => {
       it('simple', (done) => {
