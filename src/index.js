@@ -38,7 +38,7 @@ export type QueryResult<Value> = Array<QueryEntry<Value>>
 
 export type QueryEntry<Value> = {
   key: Key,
-  value: ?Value
+  value?: Value
 }
 
 export type Filter<Value> = (QueryEntry<Value>, (err: ?Error, truthy: ?bool) => void) => void

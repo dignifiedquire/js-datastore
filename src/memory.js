@@ -4,7 +4,9 @@
 import type {Key} from './key'
 import type {Batch, Query, QueryResult} from './'
 
-const setImmediate = require('async/setImmediate')
+const waterfall = require('async/waterfall')
+const filter = require('async/filter')
+const constant = require('async/constant')
 
 class MemoryDatastore {
   data: {[key: Key]: Buffer}
@@ -77,24 +79,40 @@ class MemoryDatastore {
       value: this.data[k]
     }))
 
-    if (q.prefix !== undefined) {
-      res = res.filter((e) => e.key.startsWith(q.prefix))
+    if (q.prefix != null) {
+      const {prefix} = q
+      res = res.filter((e) => e.key.startsWith(prefix))
     }
 
-    if (q.offset !== undefined || q.limit !== undefined) {
-      res = res.slice(
-        q.offset || 0,
-        q.limit
-      )
-    }
-
-    if (q.keysOnly === true) {
-      res = res.map((v) => ({
-        key: v.key
+    let tasks = [constant(res)]
+    if (q.filters != null) {
+      tasks = tasks.concat(q.filters.map((f) => {
+        return (list, cb) => filter(list, f, cb)
       }))
     }
 
-    setImmediate(() => {
+    if (q.orders != null) {
+      tasks = tasks.concat(q.orders)
+    }
+
+    waterfall(tasks, (err, res) => {
+      if (err) {
+        return callback(err)
+      }
+
+      if (q.offset !== undefined || q.limit !== undefined) {
+        res = res.slice(
+          q.offset || 0,
+          q.limit
+        )
+      }
+
+      if (q.keysOnly === true) {
+        res = res.map((v) => ({
+          key: v.key
+        }))
+      }
+
       callback(null, res)
     })
   }

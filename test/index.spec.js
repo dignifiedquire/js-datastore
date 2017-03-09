@@ -93,37 +93,57 @@ describe('datastore', () => {
     })
 
     describe('query', () => {
-      it('simple', (done) => {
-        const store = new Store()
+      let store
+      const hello = {key: '/q/hello', value: new Buffer('hello')}
+      const world = {key: '/z/world', value: new Buffer('world')}
+      const hello2 = {key: '/z/hello', value: new Buffer('hello2')}
+      const filter1 = (entry, cb) => {
+        cb(null, entry.key.startsWith('/z'))
+      }
+
+      const filter2 = (entry, cb) => {
+        cb(null, entry.key.endsWith('hello'))
+      }
+
+      const orderIdentity = (res, cb) => {
+        cb(null, res)
+      }
+
+      const orderReverse = (res, cb) => {
+        cb(null, res.reverse())
+      }
+
+      const tests = [
+        ['empty', {}, [hello, world, hello2]],
+        ['prefix', {prefix: '/q'}, [hello]],
+        ['1 filter', {filters: [filter1]}, [world, hello2]],
+        ['2 filters', {filters: [filter1, filter2]}, [hello2]],
+        ['limit', {limit: 1}, [hello]],
+        ['offset', {offset: 1}, [world, hello2]],
+        ['keysOnly', {keysOnly: true}, [{key: hello.key}, {key: world.key}, {key: hello2.key}]],
+        ['1 order (identity)', {orders: [orderIdentity]}, [hello, world, hello2]],
+        ['1 order (reverse)', {orders: [orderReverse]}, [hello2, world, hello]]
+      ]
+
+      before((done) => {
+        store = new Store()
 
         const b = store.batch()
-        const hello = {key: '/q/hello', value: new Buffer('hello')}
-        const world = {key: '/z/world', value: new Buffer('world')}
+
         b.put(hello.key, hello.value)
         b.put(world.key, world.value)
+        b.put(hello2.key, hello2.value)
 
-        const tests = [
-          [{},[hello, world]],
-          [{prefix: '/q'}, [hello]],
-          [{filters: [(res) => {
-            cb(null, res[1])
-          }]}, [world]]
-          [{limit: 1}, [hello]],
-          [{offset: 1}, [world]],
-          [{keysOnly: true}, [{key: hello.key}, {key: world.key}]]
-        ]
-
-        series([
-          (cb) => b.commit(cb),
-          (cb) => each(tests, (t, cb) => {
-            store.query(t[0], (err, res) => {
-              expect(err).to.not.exist
-              expect(res).to.be.eql(t[1])
-              cb()
-            })
-          }, cb)
-        ], done)
+        b.commit(done)
       })
+
+      tests.forEach((t) => it(t[0], (done) => {
+        store.query(t[1], (err, res) => {
+          expect(err).to.not.exist
+          expect(res).to.be.eql(t[2])
+          done()
+        })
+      }))
     })
   }))
 })
