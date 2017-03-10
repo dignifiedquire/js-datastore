@@ -3,11 +3,14 @@
 
 import type {Batch, Query, QueryResult} from './'
 
+const pull = require('pull-stream')
 const waterfall = require('async/waterfall')
 const filter = require('async/filter')
 const constant = require('async/constant')
 const setImmedidate = require('async/setImmediate')
 
+const asyncFilter = require('./utils').asyncFilter
+const asyncSort = require('./utils').asyncSort
 const Key = require('./key')
 
 class MemoryDatastore {
@@ -74,49 +77,47 @@ class MemoryDatastore {
     }
   }
 
-  query(q: Query<Buffer>, callback: (?Error, ?QueryResult<Buffer>) => void): void {
-    const keys = Object.keys(this.data)
-    let res = keys.map((k) => ({
-      key: new Key(k),
-      value: this.data[k]
-    }))
+  query(q: Query<Buffer>): QueryResult<Buffer> {
+    let tasks = [
+      pull.keys(this.data),
+      pull.map((k) => ({
+        key: new Key(k),
+        value: this.data[k]
+      }))
+    ]
+
+    let filters = []
 
     if (q.prefix != null) {
       const {prefix} = q
-      res = res.filter((e) => e.key.toString().startsWith(prefix))
+      filters.push((e, cb) => cb(null, e.key.toString().startsWith(prefix)))
     }
 
-    let tasks = [constant(res)]
     if (q.filters != null) {
-      tasks = tasks.concat(q.filters.map((f) => {
-        return (list, cb) => filter(list, f, cb)
-      }))
+      filters = filters.concat(q.filters)
     }
+
+    tasks = tasks.concat(filters.map((f) => asyncFilter(f)))
 
     if (q.orders != null) {
-      tasks = tasks.concat(q.orders)
+      tasks = tasks.concat(q.orders.map((o) => asyncSort(o)))
     }
 
-    waterfall(tasks, (err, res) => {
-      if (err) {
-        return callback(err)
-      }
+    if (q.offset != null) {
+      let i = 0
+      // $FlowFixMe
+      tasks.push(pull.filter(() => i++ >= q.offset))
+    }
 
-      if (q.offset !== undefined || q.limit !== undefined) {
-        res = res.slice(
-          q.offset || 0,
-          q.limit
-        )
-      }
+    if (q.limit != null) {
+      tasks.push(pull.take(q.limit))
+    }
 
-      if (q.keysOnly === true) {
-        res = res.map((v) => ({
-          key: v.key
-        }))
-      }
+    if (q.keysOnly === true) {
+      tasks.push(pull.map((e) => ({key: e.key})))
+    }
 
-      callback(null, res)
-    })
+    return pull.apply(null, tasks)
   }
 
   close (callback: (err: ?Error) => void): void {

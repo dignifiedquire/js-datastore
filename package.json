@@ -27,6 +27,8 @@
   },
   "dependencies": {
     "async": "^2.1.5",
+    "pull-defer": "^0.2.2",
+    "pull-stream": "^3.5.0",
     "uuid": "^3.0.1"
   }
 }

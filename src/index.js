@@ -11,7 +11,7 @@ export interface Datastore<Value> {
   has(Key, (err: ?Error, has: ?bool) => void): void;
   delete(Key, (err: ?Error) => void): void;
 
-  query(Query<Value>, (err: ?Error, res: ?QueryResult<Value>) => void): void;
+  query(Query<Value>): QueryResult<Value>;
 
   batch(): Batch<Value>;
   close((err: ?Error) => void): void;
@@ -35,7 +35,10 @@ export type Query<Value> = {
   keysOnly?: bool
 }
 
-export type QueryResult<Value> = Array<QueryEntry<Value>>
+export type PullEnd = bool | Error
+export type PullSource<Val> = (end: ?PullEnd, (end: ?PullEnd, Val) => void) => void
+
+export type QueryResult<Value> = PullSource<QueryEntry<Value>>
 
 export type QueryEntry<Value> = {
   key: Key,

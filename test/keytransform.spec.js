@@ -9,6 +9,7 @@ const series = require('async/series')
 const each = require('async/each')
 const map = require('async/map')
 const parallel = require('async/parallel')
+const pull = require('pull-stream')
 
 const KeyTransform = require('../src/keytransform')
 const Memory = require('../src/memory')
@@ -58,8 +59,8 @@ describe('KeyTransformDatastore', () => {
         cb()
       }),
       (cb) => parallel([
-        (cb) => mStore.query({}, cb),
-        (cb) => kStore.query({}, cb)
+        (cb) => pull(mStore.query({}), pull.collect(cb)),
+        (cb) => pull(kStore.query({}), pull.collect(cb))
       ], (err, res) => {
         expect(err).to.not.exist
         expect(res[0]).to.have.length(res[1].length)

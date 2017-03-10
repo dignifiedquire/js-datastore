@@ -4,10 +4,10 @@
 
 require('babel-register')
 
+const pull = require('pull-stream')
 const expect = require('chai').expect
 const series = require('async/series')
 const map = require('async/map')
-const parallel = require('async/parallel')
 const each = require('async/each')
 
 const Key = require('../src/key')
@@ -149,7 +149,6 @@ describe('datastore', () => {
       })
     })
 
-
     describe('batch', () => {
       let store
 
@@ -168,7 +167,7 @@ describe('datastore', () => {
           (cb) => store.put(new Key('/old'), new Buffer('old'), cb),
           (cb) => {
             b.put(new Key('/one'), new Buffer('1'))
-            b.put(new Key('/two'), new Buffer('2')),
+            b.put(new Key('/two'), new Buffer('2'))
             b.put(new Key('/three'), new Buffer('3'))
             b.delete(new Key('/old'), cb)
             b.commit(cb)
@@ -236,11 +235,14 @@ describe('datastore', () => {
       })
 
       tests.forEach((t) => it(t[0], (done) => {
-        store.query(t[1], (err, res) => {
-          expect(err).to.not.exist
-          expect(res).to.be.eql(t[2])
-          done()
-        })
+        pull(
+          store.query(t[1]),
+          pull.collect((err, res) => {
+            expect(err).to.not.exist
+            expect(res).to.be.eql(t[2])
+            done()
+          })
+        )
       }))
     })
   }))

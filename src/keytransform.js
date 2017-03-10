@@ -8,6 +8,7 @@ const waterfall = require('async/waterfall')
 const filter = require('async/filter')
 const constant = require('async/constant')
 const setImmedidate = require('async/setImmediate')
+const pull = require('pull-stream')
 
 /**
  * Map one key onto another key.
@@ -67,19 +68,14 @@ class KeyTransformDatastore<Value> {
     }
   }
 
-  query(q: Query<Value>, callback: (?Error, ?QueryResult<Value>) => void): void {
-    this.child.query(q, (err, result) => {
-      if (err) {
-        return callback(err)
-      }
-      if (result == null) {
-        return callback(err, result)
-      }
-      result.forEach((e) => {
+  query(q: Query<Value>): QueryResult<Value> {
+    return pull(
+      this.child.query(q),
+      pull.map((e) => {
         e.key = this.transform.invert(e.key)
+        return e
       })
-      callback(null, result)
-    })
+    )
   }
 
   close (callback: (err: ?Error) => void): void {

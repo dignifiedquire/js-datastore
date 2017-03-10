@@ -15,7 +15,7 @@ The exact types can be found in [`src/index.js`](src/index.js).
 
 ### `delete(Key, (err: ?Error) => void): void`
 
-### `query(Query<Value>, (err: ?Error, res: ?QueryResult<Value>) => void): void`
+### `query(Query<Value>): QueryResult<Value>)`
 
 #### `Query`
 
