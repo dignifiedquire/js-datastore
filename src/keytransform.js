@@ -52,10 +52,10 @@ class KeyTransformDatastore<Value> {
   batch (): Batch<Value> {
     const b = this.child.batch()
     return {
-      put (key: Key, value: Value): void {
+      put: (key: Key, value: Value): void => {
         b.put(this.transform.convert(key), value)
       },
-      delete (key: Key): void {
+      delete: (key: Key): void => {
         b.delete(this.transform.convert(key))
       },
       commit: (callback: (err: ?Error) => void) => {

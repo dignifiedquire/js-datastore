@@ -68,3 +68,8 @@ exports.asyncSort = function (sorter) {
     return source
   }
 }
+
+exports.replaceStartWith = function (s, r) {
+  const matcher = new RegExp('^' + r)
+  return s.replace(matcher, '')
+}

@@ -5,7 +5,7 @@ import type Key from './key'
 
 // -- Basics
 
-type Callback<Value> = (err: ?Error, ?Value) => void
+export type Callback<Value> = (err: ?Error, ?Value) => void
 
 // eslint-disable-next-line
 export interface Datastore<Value> {

@@ -13,9 +13,19 @@ const each = require('async/each')
 
 const Key = require('../src/key')
 const MemoryStore = require('../src/memory')
+const MountStore = require('../src/mount')
 
 const stores = [
-  ['Memory', () => new MemoryStore()]
+  ['Memory', () => new MemoryStore()],
+  ['Mount(Memory)', () => {
+    return new MountStore([{
+      datastore: new MemoryStore(),
+      prefix: new Key('q')
+    }, {
+      datastore: new MemoryStore(),
+      prefix: new Key('z')
+    }])
+  }]
 ]
 
 describe('datastore', () => {
@@ -34,7 +44,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = new Key('one')
+        const k = new Key('/z/one')
 
         store.put(k, new Buffer('one'), done)
       })
@@ -42,7 +52,7 @@ describe('datastore', () => {
       it('parallel', (done) => {
         const data = []
         for (let i = 0; i < 100; i++) {
-          data.push([new Key(`key${i}`), new Buffer(`data${i}`)])
+          data.push([new Key(`/z/key${i}`), new Buffer(`data${i}`)])
         }
 
         each(data, (d, cb) => {
@@ -74,7 +84,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = new Key('one')
+        const k = new Key('/z/one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
           (cb) => store.get(k, (err, res) => {
@@ -98,7 +108,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = new Key('one')
+        const k = new Key('/z/one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
           (cb) => store.get(k, (err, res) => {
@@ -118,7 +128,7 @@ describe('datastore', () => {
       it('parallel', (done) => {
         const data = []
         for (let i = 0; i < 100; i++) {
-          data.push([new Key(`key${i}`), new Buffer(`data${i}`)])
+          data.push([new Key(`/z/key${i}`), new Buffer(`data${i}`)])
         }
 
         series([
@@ -165,16 +175,16 @@ describe('datastore', () => {
         const b = store.batch()
 
         series([
-          (cb) => store.put(new Key('/old'), new Buffer('old'), cb),
+          (cb) => store.put(new Key('/z/old'), new Buffer('old'), cb),
           (cb) => {
-            b.put(new Key('/one'), new Buffer('1'))
-            b.put(new Key('/two'), new Buffer('2'))
-            b.put(new Key('/three'), new Buffer('3'))
-            b.delete(new Key('/old'), cb)
+            b.put(new Key('/q/one'), new Buffer('1'))
+            b.put(new Key('/q/two'), new Buffer('2'))
+            b.put(new Key('/q/three'), new Buffer('3'))
+            b.delete(new Key('/z/old'))
             b.commit(cb)
           },
           (cb) => map(
-            ['/one', '/two', '/three', '/old'],
+            ['/q/one', '/q/two', '/q/three', '/z/old'],
             (k, cb) => store.has(new Key(k), cb),
             (err, res) => {
               expect(err).to.not.exist
@@ -190,13 +200,13 @@ describe('datastore', () => {
       let store
       const hello = {key: new Key('/q/hello'), value: new Buffer('hello')}
       const world = {key: new Key('/z/world'), value: new Buffer('world')}
-      const hello2 = {key: new Key('/z/hello'), value: new Buffer('hello2')}
+      const hello2 = {key: new Key('/z/hello2'), value: new Buffer('hello2')}
       const filter1 = (entry, cb) => {
-        cb(null, entry.key.toString().startsWith('/z'))
+        cb(null, !entry.key.toString().endsWith('hello'))
       }
 
       const filter2 = (entry, cb) => {
-        cb(null, entry.key.toString().endsWith('hello'))
+        cb(null, entry.key.toString().endsWith('hello2'))
       }
 
       const orderIdentity = (res, cb) => {
