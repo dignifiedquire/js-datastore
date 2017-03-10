@@ -31,16 +31,16 @@ class Key {
 
     if (this._string.length === 0 || !this._string.startsWith('/')) {
       throw new Error(`Invalid key: ${this.toString()}`)
-	  }
+    }
   }
 
-  toString() {
+  toString () {
     return this._string
   }
 
   // waiting on https://github.com/facebook/flow/issues/2286
   // $FlowFixMe
-  get [Symbol.toStringTag](): string {
+  get [Symbol.toStringTag] (): string {
     return `[Key ${this._string}]`
   }
 
@@ -52,7 +52,7 @@ class Key {
    * // => Key('/one/two')
    *
    */
-  static withNamespaces(list: Array<string>): Key {
+  static withNamespaces (list: Array<string>): Key {
     return new Key(list.join('/'))
   }
 
@@ -64,7 +64,7 @@ class Key {
    * // => Key('/f98719ea086343f7b71f32ea9d9d521d')
    *
    */
-  static random(): Key {
+  static random (): Key {
     return new Key(uuid().replace(/-/g, ''))
   }
 
@@ -208,7 +208,7 @@ class Key {
    */
   parent (): Key {
     const list = this.list()
-    if (list.length == 1) {
+    if (list.length === 1) {
       return new Key('/', false)
     }
 
@@ -273,11 +273,10 @@ class Key {
   }
 }
 
-
 /**
  * The first component of a namespace. `foo` in `foo:bar`
  */
-function namespaceType(ns: string): string {
+function namespaceType (ns: string): string {
   const parts = ns.split(':')
   if (parts.length < 2) {
     return ''
@@ -288,10 +287,9 @@ function namespaceType(ns: string): string {
 /**
  * The last component of a namespace, `baz` in `foo:bar:baz`.
  */
-function namespaceValue(ns: string): string {
+function namespaceValue (ns: string): string {
   const parts = ns.split(':')
   return parts[parts.length - 1]
 }
-
 
 module.exports = Key

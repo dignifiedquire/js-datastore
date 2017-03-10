@@ -4,10 +4,6 @@
 import type Key from './key'
 import type {Datastore, Batch, Query, QueryResult} from './'
 
-const waterfall = require('async/waterfall')
-const filter = require('async/filter')
-const constant = require('async/constant')
-const setImmedidate = require('async/setImmediate')
 const pull = require('pull-stream')
 
 /**
@@ -68,7 +64,7 @@ class KeyTransformDatastore<Value> {
     }
   }
 
-  query(q: Query<Value>): QueryResult<Value> {
+  query (q: Query<Value>): QueryResult<Value> {
     return pull(
       this.child.query(q),
       pull.map((e) => {

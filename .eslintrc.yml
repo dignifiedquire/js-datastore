@@ -1,0 +1,11 @@
+---
+parser: babel-eslint
+
+extends: './node_modules/aegir/config/eslintrc.yml'
+
+parserOptions:
+  sourceType: module
+
+rules:
+  strict: 0
+  valid-jsdoc: 0

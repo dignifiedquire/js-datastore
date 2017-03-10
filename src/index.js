@@ -5,23 +5,29 @@ import type Key from './key'
 
 // -- Basics
 
-export interface Datastore<Value> {
-  put(Key, Value, (err: ?Error) => void): void;
-  get(Key, (err: ?Error, val: ?Value) => void): void;
-  has(Key, (err: ?Error, has: ?bool) => void): void;
-  delete(Key, (err: ?Error) => void): void;
+type Callback<Value> = (err: ?Error, ?Value) => void
 
+// eslint-disable-next-line
+export interface Datastore<Value> {
+  // eslint-disable-next-line
+  put(Key, Value, Callback<void>): void;
+  // eslint-disable-next-line
+  get(Key, Callback<Value>): void;
+  has(Key, Callback<bool>): void;
+  delete(Key, Callback<void>): void;
+  // eslint-disable-next-line
   query(Query<Value>): QueryResult<Value>;
 
+  // eslint-disable-next-line
   batch(): Batch<Value>;
-  close((err: ?Error) => void): void;
+  close(Callback<void>): void;
 }
 
 // -- Batch
 export type Batch<Value> = {
   put(Key, Value): void,
   delete(Key): void,
-  commit((err: ?Error) => void): void
+  commit(Callback<void>): void
 }
 
 // -- Query
@@ -45,6 +51,6 @@ export type QueryEntry<Value> = {
   value?: Value
 }
 
-export type Filter<Value> = (QueryEntry<Value>, (err: ?Error, truthy: ?bool) => void) => void
+export type Filter<Value> = (QueryEntry<Value>, Callback<bool>) => void
 
-export type Order<Value> = (QueryResult<Value>, (err: ?Error, res: ?QueryResult<Value>) => void) => void
+export type Order<Value> = (QueryResult<Value>, Callback<QueryResult<Value>>) => void

@@ -4,10 +4,7 @@
 import type {Batch, Query, QueryResult} from './'
 
 const pull = require('pull-stream')
-const waterfall = require('async/waterfall')
-const filter = require('async/filter')
-const constant = require('async/constant')
-const setImmedidate = require('async/setImmediate')
+const setImmediate = require('async/setImmediate')
 
 const asyncFilter = require('./utils').asyncFilter
 const asyncSort = require('./utils').asyncSort
@@ -28,6 +25,10 @@ class MemoryDatastore {
 
   get (key: Key, callback: (?Error, ?Buffer) => void): void {
     this.has(key, (err, exists) => {
+      if (err) {
+        return callback(err)
+      }
+
       if (!exists) {
         return callback(new Error('No value'))
       }
@@ -77,7 +78,7 @@ class MemoryDatastore {
     }
   }
 
-  query(q: Query<Buffer>): QueryResult<Buffer> {
+  query (q: Query<Buffer>): QueryResult<Buffer> {
     let tasks = [
       pull.keys(this.data),
       pull.map((k) => ({
