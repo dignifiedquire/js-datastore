@@ -7,6 +7,7 @@ import type {Batch, Query, QueryResult} from './'
 const waterfall = require('async/waterfall')
 const filter = require('async/filter')
 const constant = require('async/constant')
+const setImmedidate = require('async/setImmediate')
 
 class MemoryDatastore {
   data: {[key: Key]: Buffer}
@@ -115,6 +116,10 @@ class MemoryDatastore {
 
       callback(null, res)
     })
+  }
+
+  close (callback: (err: ?Error) => void): void {
+    setImmediate(callback)
   }
 }
 

@@ -11,25 +11,34 @@ const parallel = require('async/parallel')
 const each = require('async/each')
 
 const key = require('../src/key')
+const MemoryStore = require('../src/memory')
 
 const stores = [
-  ['Memory', require('../src/memory')]
+  ['Memory', () => new MemoryStore()]
 ]
 
 describe('datastore', () => {
   stores.forEach((args) => describe(args[0], () => {
-    const Store = args[1]
+    const createStore = args[1]
 
     describe('put', () => {
+      let store
+
+      beforeEach(() => {
+        store = createStore()
+      })
+
+      afterEach((done) => {
+        store.close(done)
+      })
+
       it('simple', (done) => {
-        const store = new Store()
         const k = key.create('one')
 
         store.put(k, new Buffer('one'), done)
       })
 
       it('parallel', (done) => {
-        const store = new Store()
         const data = []
         for (let i = 0; i < 100; i++) {
           data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
@@ -53,8 +62,17 @@ describe('datastore', () => {
     })
 
     describe('get', () => {
+      let store
+
+      beforeEach(() => {
+        store = createStore()
+      })
+
+      afterEach((done) => {
+        store.close(done)
+      })
+
       it('simple', (done) => {
-        const store = new Store()
         const k = key.create('one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
@@ -68,8 +86,17 @@ describe('datastore', () => {
     })
 
     describe('delete', () => {
+      let store
+
+      beforeEach(() => {
+        store = createStore()
+      })
+
+      afterEach((done) => {
+        store.close(done)
+      })
+
       it('simple', (done) => {
-        const store = new Store()
         const k = key.create('one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
@@ -88,7 +115,6 @@ describe('datastore', () => {
       })
 
       it('parallel', (done) => {
-        const store = new Store()
         const data = []
         for (let i = 0; i < 100; i++) {
           data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
@@ -125,8 +151,17 @@ describe('datastore', () => {
 
 
     describe('batch', () => {
+      let store
+
+      beforeEach(() => {
+        store = createStore()
+      })
+
+      afterEach((done) => {
+        store.close(done)
+      })
+
       it('simple', (done) => {
-        const store = new Store()
         const b = store.batch()
 
         series([
@@ -185,7 +220,7 @@ describe('datastore', () => {
       ]
 
       before((done) => {
-        store = new Store()
+        store = createStore()
 
         const b = store.batch()
 
@@ -194,6 +229,10 @@ describe('datastore', () => {
         b.put(hello2.key, hello2.value)
 
         b.commit(done)
+      })
+
+      after((done) => {
+        store.close(done)
       })
 
       tests.forEach((t) => it(t[0], (done) => {

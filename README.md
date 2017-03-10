@@ -34,6 +34,10 @@ Object in the form with the following optional properties
 #### `delete(Key): void`
 #### `commit((err: ?Error) => void): void`
 
+### `close((err: ?Error) => void): void`
+
+Close the datastore, this should always be called to ensure resources are cleaned up.
+
 ## License
 
 MIT 2017 Protocol Labs

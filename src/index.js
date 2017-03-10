@@ -14,6 +14,7 @@ export interface Datastore<Value> {
   query(Query<Value>, (err: ?Error, res: ?QueryResult<Value>) => void): void;
 
   batch(): Batch<Value>;
+  close((err: ?Error) => void): void;
 }
 
 // -- Batch
