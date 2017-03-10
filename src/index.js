@@ -1,7 +1,7 @@
 /* @flow */
 'use strict'
 
-import type {Key} from './key'
+import type Key from './key'
 
 // -- Basics
 

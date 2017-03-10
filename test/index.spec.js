@@ -10,7 +10,7 @@ const map = require('async/map')
 const parallel = require('async/parallel')
 const each = require('async/each')
 
-const key = require('../src/key')
+const Key = require('../src/key')
 const MemoryStore = require('../src/memory')
 
 const stores = [
@@ -33,7 +33,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = key.create('one')
+        const k = new Key('one')
 
         store.put(k, new Buffer('one'), done)
       })
@@ -41,7 +41,7 @@ describe('datastore', () => {
       it('parallel', (done) => {
         const data = []
         for (let i = 0; i < 100; i++) {
-          data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
+          data.push([new Key(`key${i}`), new Buffer(`data${i}`)])
         }
 
         each(data, (d, cb) => {
@@ -73,7 +73,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = key.create('one')
+        const k = new Key('one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
           (cb) => store.get(k, (err, res) => {
@@ -97,7 +97,7 @@ describe('datastore', () => {
       })
 
       it('simple', (done) => {
-        const k = key.create('one')
+        const k = new Key('one')
         series([
           (cb) => store.put(k, new Buffer('hello'), cb),
           (cb) => store.get(k, (err, res) => {
@@ -117,7 +117,7 @@ describe('datastore', () => {
       it('parallel', (done) => {
         const data = []
         for (let i = 0; i < 100; i++) {
-          data.push([key.create(`key${i}`), new Buffer(`data${i}`)])
+          data.push([new Key(`key${i}`), new Buffer(`data${i}`)])
         }
 
         series([
@@ -165,17 +165,17 @@ describe('datastore', () => {
         const b = store.batch()
 
         series([
-          (cb) => store.put('/old', new Buffer('old'), cb),
+          (cb) => store.put(new Key('/old'), new Buffer('old'), cb),
           (cb) => {
-            b.put('/one', new Buffer('1'))
-            b.put('/two', new Buffer('2')),
-            b.put('/three', new Buffer('3'))
-            b.delete('/old', cb)
+            b.put(new Key('/one'), new Buffer('1'))
+            b.put(new Key('/two'), new Buffer('2')),
+            b.put(new Key('/three'), new Buffer('3'))
+            b.delete(new Key('/old'), cb)
             b.commit(cb)
           },
           (cb) => map(
             ['/one', '/two', '/three', '/old'],
-            (k, cb) => store.has(k, cb),
+            (k, cb) => store.has(new Key(k), cb),
             (err, res) => {
               expect(err).to.not.exist
               expect(res).to.be.eql([true, true, true, false])
@@ -188,15 +188,15 @@ describe('datastore', () => {
 
     describe('query', () => {
       let store
-      const hello = {key: '/q/hello', value: new Buffer('hello')}
-      const world = {key: '/z/world', value: new Buffer('world')}
-      const hello2 = {key: '/z/hello', value: new Buffer('hello2')}
+      const hello = {key: new Key('/q/hello'), value: new Buffer('hello')}
+      const world = {key: new Key('/z/world'), value: new Buffer('world')}
+      const hello2 = {key: new Key('/z/hello'), value: new Buffer('hello2')}
       const filter1 = (entry, cb) => {
-        cb(null, entry.key.startsWith('/z'))
+        cb(null, entry.key.toString().startsWith('/z'))
       }
 
       const filter2 = (entry, cb) => {
-        cb(null, entry.key.endsWith('hello'))
+        cb(null, entry.key.toString().endsWith('hello'))
       }
 
       const orderIdentity = (res, cb) => {

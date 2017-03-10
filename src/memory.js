@@ -1,7 +1,6 @@
 /* @flow */
 'use strict'
 
-import type {Key} from './key'
 import type {Batch, Query, QueryResult} from './'
 
 const waterfall = require('async/waterfall')
@@ -9,37 +8,39 @@ const filter = require('async/filter')
 const constant = require('async/constant')
 const setImmedidate = require('async/setImmediate')
 
+const Key = require('./key')
+
 class MemoryDatastore {
-  data: {[key: Key]: Buffer}
+  data: {[key: string]: Buffer}
 
   constructor () {
     this.data = {}
   }
 
   put (key: Key, val: Buffer, callback: (?Error) => void): void {
-    this.data[key] = val
+    this.data[key.toString()] = val
 
     setImmediate(callback)
   }
 
-  get (key: Key, callback: (?Error) => void): void {
+  get (key: Key, callback: (?Error, ?Buffer) => void): void {
     this.has(key, (err, exists) => {
       if (!exists) {
         return callback(new Error('No value'))
       }
 
-      callback(null, this.data[key])
+      callback(null, this.data[key.toString()])
     })
   }
 
   has (key: Key, callback: (?Error, bool) => void): void {
     setImmediate(() => {
-      callback(null, this.data[key] !== undefined)
+      callback(null, this.data[key.toString()] !== undefined)
     })
   }
 
   delete (key: Key, callback: (?Error) => void): void {
-    delete this.data[key]
+    delete this.data[key.toString()]
 
     setImmediate(() => {
       callback()
@@ -59,12 +60,12 @@ class MemoryDatastore {
       },
       commit: (callback: (err: ?Error) => void) => {
         puts.forEach((v) => {
-          this.data[v[0]] = v[1]
+          this.data[v[0].toString()] = v[1]
         })
 
         puts = []
         dels.forEach((key) => {
-          delete this.data[key]
+          delete this.data[key.toString()]
         })
         dels = []
 
@@ -76,13 +77,13 @@ class MemoryDatastore {
   query(q: Query<Buffer>, callback: (?Error, ?QueryResult<Buffer>) => void): void {
     const keys = Object.keys(this.data)
     let res = keys.map((k) => ({
-      key: k,
+      key: new Key(k),
       value: this.data[k]
     }))
 
     if (q.prefix != null) {
       const {prefix} = q
-      res = res.filter((e) => e.key.startsWith(prefix))
+      res = res.filter((e) => e.key.toString().startsWith(prefix))
     }
 
     let tasks = [constant(res)]
