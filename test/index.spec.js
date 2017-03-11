@@ -8,6 +8,7 @@ require('babel-register')
 const pull = require('pull-stream')
 const expect = require('chai').expect
 const series = require('async/series')
+const parallel = require('async/parallel')
 const map = require('async/map')
 const each = require('async/each')
 const rimraf = require('rimraf')
@@ -21,17 +22,40 @@ const utils = require('../src/utils')
 
 describe('datastore', () => {
   let dir
+  let dir1
   const stores = [
     ['Memory', () => new MemoryStore(), () => {}],
     ['Mount(Memory)', () => {
       return new MountStore([{
         datastore: new MemoryStore(),
-        prefix: new Key('q')
+        prefix: new Key('/q')
       }, {
         datastore: new MemoryStore(),
-        prefix: new Key('z')
+        prefix: new Key('/a')
+      }, {
+        datastore: new MemoryStore(),
+        prefix: new Key('/z')
       }])
     }, () => {}],
+    ['Mount(Memory, Fs, Level)', () => {
+      dir1 = utils.tmpdir()
+      dir = utils.tmpdir()
+      return new MountStore([{
+        datastore: new LevelStore(dir1),
+        prefix: new Key('/a')
+      }, {
+        datastore: new MemoryStore(),
+        prefix: new Key('/z')
+      }, {
+        datastore: new FsStore(dir),
+        prefix: new Key('/q')
+      }])
+    }, (done) => {
+      parallel([
+        (cb) => rimraf(dir1, cb),
+        (cb) => rimraf(dir, cb)
+      ], done)
+    }],
     ['Leveldb', () => {
       dir = utils.tmpdir()
       return new LevelStore(dir)
@@ -150,7 +174,7 @@ describe('datastore', () => {
       it('parallel', (done) => {
         const data = []
         for (let i = 0; i < 100; i++) {
-          data.push([new Key(`/z/key${i}`), new Buffer(`data${i}`)])
+          data.push([new Key(`/a/key${i}`), new Buffer(`data${i}`)])
         }
 
         series([
@@ -199,14 +223,14 @@ describe('datastore', () => {
         series([
           (cb) => store.put(new Key('/z/old'), new Buffer('old'), cb),
           (cb) => {
-            b.put(new Key('/q/one'), new Buffer('1'))
+            b.put(new Key('/a/one'), new Buffer('1'))
             b.put(new Key('/q/two'), new Buffer('2'))
             b.put(new Key('/q/three'), new Buffer('3'))
             b.delete(new Key('/z/old'))
             b.commit(cb)
           },
           (cb) => map(
-            ['/q/one', '/q/two', '/q/three', '/z/old'],
+            ['/a/one', '/q/two', '/q/three', '/z/old'],
             (k, cb) => store.has(new Key(k), cb),
             (err, res) => {
               expect(err).to.not.exist
@@ -254,8 +278,8 @@ describe('datastore', () => {
         ['prefix', {prefix: '/q'}, [hello]],
         ['1 filter', {filters: [filter1]}, [world, hello2]],
         ['2 filters', {filters: [filter1, filter2]}, [hello2]],
-        ['limit', {limit: 1}, [hello]],
-        ['offset', {offset: 1}, [world, hello2]],
+        ['limit', {limit: 1}, 1],
+        ['offset', {offset: 1}, 2],
         ['keysOnly', {keysOnly: true}, [{key: hello.key}, {key: world.key}, {key: hello2.key}]],
         ['1 order (1)', {orders: [order1]}, [hello, hello2, world]],
         ['1 order (reverse 1)', {orders: [order2]}, [world, hello2, hello]]
@@ -282,17 +306,22 @@ describe('datastore', () => {
           store.query(t[1]),
           pull.collect((err, res) => {
             expect(err).to.not.exist
-            if (t[1].orders == null) {
-              const s = (a, b) => {
-                if (a.key.toString() < b.key.toString()) {
-                  return 1
-                } else {
-                  return -1
+            const expected = t[2]
+            if (Array.isArray(expected)) {
+              if (t[1].orders == null) {
+                const s = (a, b) => {
+                  if (a.key.toString() < b.key.toString()) {
+                    return 1
+                  } else {
+                    return -1
+                  }
                 }
+                expect(res.sort(s)).to.be.eql(expected.sort(s))
+              } else {
+                expect(res).to.be.eql(t[2])
               }
-              expect(res.sort(s)).to.be.eql(t[2].sort(s))
-            } else {
-              expect(res).to.be.eql(t[2])
+            } else if (typeof expected === 'number') {
+              expect(res).to.have.length(expected)
             }
             done()
           })
