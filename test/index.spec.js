@@ -10,13 +10,22 @@ const expect = require('chai').expect
 const series = require('async/series')
 const map = require('async/map')
 const each = require('async/each')
+const os = require('os')
+const path = require('path')
+const rimraf = require('rimraf')
 
 const Key = require('../src/key')
 const MemoryStore = require('../src/memory')
 const MountStore = require('../src/mount')
+const LevelStore = require('../src/leveldb')
 
+const tmpDir = () => {
+  return path.join(os.tmpdir(), `_test_dir_datastore-${Math.random().toString().replace('.', '')}`)
+}
+
+let dir
 const stores = [
-  ['Memory', () => new MemoryStore()],
+  ['Memory', () => new MemoryStore(), () => {}],
   ['Mount(Memory)', () => {
     return new MountStore([{
       datastore: new MemoryStore(),
@@ -25,12 +34,23 @@ const stores = [
       datastore: new MemoryStore(),
       prefix: new Key('z')
     }])
-  }]
+  }, () => {}],
+  ['Leveldb', () => {
+    dir = tmpDir()
+    return new LevelStore(dir)
+  }, (done) => {
+    rimraf(dir, done)
+  }],
+  ['Leveldb(Memdown)', () => {
+    return new LevelStore('', {db: require('memdown')})
+  }, () => {}]
 ]
 
 describe('datastore', () => {
   stores.forEach((args) => describe(args[0], () => {
     const createStore = args[1]
+
+    after(args[2])
 
     describe('put', () => {
       let store
@@ -209,12 +229,22 @@ describe('datastore', () => {
         cb(null, entry.key.toString().endsWith('hello2'))
       }
 
-      const orderIdentity = (res, cb) => {
-        cb(null, res)
+      const order1 = (res, cb) => {
+        cb(null, res.sort((a, b) => {
+          if (a.key.toString() < b.key.toString()) {
+            return -1
+          }
+          return 1
+        }))
       }
 
-      const orderReverse = (res, cb) => {
-        cb(null, res.reverse())
+      const order2 = (res, cb) => {
+        cb(null, res.sort((a, b) => {
+          if (a.key.toString() < b.key.toString()) {
+            return 1
+          }
+          return -1
+        }))
       }
 
       const tests = [
@@ -225,8 +255,8 @@ describe('datastore', () => {
         ['limit', {limit: 1}, [hello]],
         ['offset', {offset: 1}, [world, hello2]],
         ['keysOnly', {keysOnly: true}, [{key: hello.key}, {key: world.key}, {key: hello2.key}]],
-        ['1 order (identity)', {orders: [orderIdentity]}, [hello, world, hello2]],
-        ['1 order (reverse)', {orders: [orderReverse]}, [hello2, world, hello]]
+        ['1 order (1)', {orders: [order1]}, [hello, hello2, world]],
+        ['1 order (reverse 1)', {orders: [order2]}, [world, hello2, hello]]
       ]
 
       before((done) => {
@@ -250,7 +280,18 @@ describe('datastore', () => {
           store.query(t[1]),
           pull.collect((err, res) => {
             expect(err).to.not.exist
-            expect(res).to.be.eql(t[2])
+            if (t[1].orders == null) {
+              const s = (a, b) => {
+                if (a.key.toString() < b.key.toString()) {
+                  return 1
+                } else {
+                  return -1
+                }
+              }
+              expect(res.sort(s)).to.be.eql(t[2].sort(s))
+            } else {
+              expect(res).to.be.eql(t[2])
+            }
             done()
           })
         )

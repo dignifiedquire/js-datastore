@@ -7,9 +7,10 @@
 ## Implementations
 
 - Backed Implementations
-  - Memory: [`src/memory.js`](src/memory.js)
+  - Memory: [`src/memory`](src/memory.js)
+  - leveldb: [`src/leveldb`](src/leveldb.js) (supports any levelup compatible backend)
 - Wrapper Implementations
-  - Mount: [`src/mount.js`](src/mount.js)
+  - Mount: [`src/mount`](src/mount.js)
   - Keytransform: [`src/keytransform`](src/keytransform.js)
 
 ## API
