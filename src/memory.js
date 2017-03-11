@@ -1,7 +1,7 @@
 /* @flow */
 'use strict'
 
-import type {Batch, Query, QueryResult} from './'
+import type {Batch, Query, QueryResult, Callback} from './'
 
 const pull = require('pull-stream')
 const setImmediate = require('async/setImmediate')
@@ -17,13 +17,13 @@ class MemoryDatastore {
     this.data = {}
   }
 
-  put (key: Key, val: Buffer, callback: (?Error) => void): void {
+  put (key: Key, val: Buffer, callback: Callback<void>): void {
     this.data[key.toString()] = val
 
     setImmediate(callback)
   }
 
-  get (key: Key, callback: (?Error, ?Buffer) => void): void {
+  get (key: Key, callback: Callback<Buffer>): void {
     this.has(key, (err, exists) => {
       if (err) {
         return callback(err)
@@ -37,13 +37,13 @@ class MemoryDatastore {
     })
   }
 
-  has (key: Key, callback: (?Error, bool) => void): void {
+  has (key: Key, callback: Callback<bool>): void {
     setImmediate(() => {
       callback(null, this.data[key.toString()] !== undefined)
     })
   }
 
-  delete (key: Key, callback: (?Error) => void): void {
+  delete (key: Key, callback: Callback<void>): void {
     delete this.data[key.toString()]
 
     setImmediate(() => {
@@ -62,7 +62,7 @@ class MemoryDatastore {
       delete (key: Key): void {
         dels.push(key)
       },
-      commit: (callback: (err: ?Error) => void) => {
+      commit: (callback: Callback<void>): void => {
         puts.forEach((v) => {
           this.data[v[0].toString()] = v[1]
         })
@@ -121,7 +121,7 @@ class MemoryDatastore {
     return pull.apply(null, tasks)
   }
 
-  close (callback: (err: ?Error) => void): void {
+  close (callback: Callback<void>): void {
     setImmediate(callback)
   }
 }

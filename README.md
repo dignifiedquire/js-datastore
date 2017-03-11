@@ -9,10 +9,24 @@
 - Backed Implementations
   - Memory: [`src/memory`](src/memory.js)
   - leveldb: [`src/leveldb`](src/leveldb.js) (supports any levelup compatible backend)
-  - File System [`src/fs`](src/fs.js)
+  - File System: [`src/fs`](src/fs.js)
 - Wrapper Implementations
   - Mount: [`src/mount`](src/mount.js)
   - Keytransform: [`src/keytransform`](src/keytransform.js)
+  - Sharding: [`src/sharding`](src/sharding.js)
+
+If you want the same functionality as [go-ds-flatfs](https://github.com/ipfs/go-ds-flatfs), use sharding with fs.
+
+```js
+const FsStore = require('./src/fs')
+const ShardingStore = require('./src/sharding')
+const NextToLast = require('./src/shard').NextToLast
+
+const fs = new FsStore('path/to/store')
+ShardingStore.createOrOpen(fs, new NextToLast(2), (err, flatfs) => {
+  // flatfs now works like go-flatfs
+})
+```
 
 ## API
 
