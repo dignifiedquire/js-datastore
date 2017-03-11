@@ -10,7 +10,7 @@ const asyncFilter = require('./utils').asyncFilter
 const asyncSort = require('./utils').asyncSort
 const Key = require('./key')
 
-type LevelOptions = {
+export type LevelOptions = {
   createIfMissing?: bool,
   errorIfExists?: bool,
   compression?: bool,

@@ -10,43 +10,45 @@ const expect = require('chai').expect
 const series = require('async/series')
 const map = require('async/map')
 const each = require('async/each')
-const os = require('os')
-const path = require('path')
 const rimraf = require('rimraf')
 
 const Key = require('../src/key')
 const MemoryStore = require('../src/memory')
 const MountStore = require('../src/mount')
 const LevelStore = require('../src/leveldb')
-
-const tmpDir = () => {
-  return path.join(os.tmpdir(), `_test_dir_datastore-${Math.random().toString().replace('.', '')}`)
-}
-
-let dir
-const stores = [
-  ['Memory', () => new MemoryStore(), () => {}],
-  ['Mount(Memory)', () => {
-    return new MountStore([{
-      datastore: new MemoryStore(),
-      prefix: new Key('q')
-    }, {
-      datastore: new MemoryStore(),
-      prefix: new Key('z')
-    }])
-  }, () => {}],
-  ['Leveldb', () => {
-    dir = tmpDir()
-    return new LevelStore(dir)
-  }, (done) => {
-    rimraf(dir, done)
-  }],
-  ['Leveldb(Memdown)', () => {
-    return new LevelStore('', {db: require('memdown')})
-  }, () => {}]
-]
+const FsStore = require('../src/fs')
+const utils = require('../src/utils')
 
 describe('datastore', () => {
+  let dir
+  const stores = [
+    ['Memory', () => new MemoryStore(), () => {}],
+    ['Mount(Memory)', () => {
+      return new MountStore([{
+        datastore: new MemoryStore(),
+        prefix: new Key('q')
+      }, {
+        datastore: new MemoryStore(),
+        prefix: new Key('z')
+      }])
+    }, () => {}],
+    ['Leveldb', () => {
+      dir = utils.tmpdir()
+      return new LevelStore(dir)
+    }, (done) => {
+      rimraf(dir, done)
+    }],
+    ['Leveldb(Memdown)', () => {
+      return new LevelStore('', {db: require('memdown')})
+    }, () => {}],
+    ['Fs', () => {
+      dir = utils.tmpdir()
+      return new FsStore(dir)
+    }, (done) => {
+      rimraf(dir, done)
+    }]
+  ]
+
   stores.forEach((args) => describe(args[0], () => {
     const createStore = args[1]
 
