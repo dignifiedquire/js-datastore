@@ -26,6 +26,7 @@
     "chai": "^3.5.0",
     "eslint": "^3.17.1",
     "flow-bin": "^0.41.0",
+    "libp2p-crypto": "^0.8.6",
     "memdown": "^1.2.4",
     "rimraf": "^2.6.1"
   },

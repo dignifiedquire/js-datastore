@@ -14,6 +14,7 @@
   - Mount: [`src/mount`](src/mount.js)
   - Keytransform: [`src/keytransform`](src/keytransform.js)
   - Sharding: [`src/sharding`](src/sharding.js)
+  - Tiered: [`src/tiered`](src/tirered.js)
 
 If you want the same functionality as [go-ds-flatfs](https://github.com/ipfs/go-ds-flatfs), use sharding with fs.
 

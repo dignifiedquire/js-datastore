@@ -12,12 +12,15 @@ const parallel = require('async/parallel')
 const map = require('async/map')
 const each = require('async/each')
 const rimraf = require('rimraf')
+const crypto = require('libp2p-crypto')
 
-const Key = require('../src/key')
 const MemoryStore = require('../src/memory')
 const MountStore = require('../src/mount')
 const LevelStore = require('../src/leveldb')
 const FsStore = require('../src/fs')
+const TieredStore = require('../src/tiered')
+
+const Key = require('../src/key')
 const utils = require('../src/utils')
 
 describe('datastore', () => {
@@ -68,6 +71,19 @@ describe('datastore', () => {
     ['Fs', () => {
       dir = utils.tmpdir()
       return new FsStore(dir)
+    }, (done) => {
+      rimraf(dir, done)
+    }],
+    ['Tired(Memory, Memory, Memory)', () => {
+      return new TieredStore([new MemoryStore(), new MemoryStore(), new MemoryStore()])
+    }, () => {}],
+    ['Tired(Memory, Fs, Leveldb(Memdown))', () => {
+      dir = utils.tmpdir()
+      return new TieredStore([
+        new MemoryStore(),
+        new FsStore(dir),
+        new LevelStore('', {db: require('memdown')})
+      ])
     }, (done) => {
       rimraf(dir, done)
     }]
@@ -238,6 +254,31 @@ describe('datastore', () => {
               cb()
             }
           )
+        ], done)
+      })
+
+      it('many (3 * 200)', (done) => {
+        const b = store.batch()
+        const count = 200
+        for (let i = 0; i < count; i++) {
+          b.put(new Key(`/a/hello${i}`), crypto.randomBytes(32))
+          b.put(new Key(`/q/hello${i}`), crypto.randomBytes(64))
+          b.put(new Key(`/z/hello${i}`), crypto.randomBytes(128))
+        }
+
+        series([
+          (cb) => b.commit(cb),
+          (cb) => parallel([
+            (cb) => pull(store.query({prefix: '/a'}), pull.collect(cb)),
+            (cb) => pull(store.query({prefix: '/z'}), pull.collect(cb)),
+            (cb) => pull(store.query({prefix: '/q'}), pull.collect(cb))
+          ], (err, res) => {
+            expect(err).to.not.exist
+            expect(res[0]).to.have.length(count)
+            expect(res[1]).to.have.length(count)
+            expect(res[2]).to.have.length(count)
+            cb()
+          })
         ], done)
       })
     })
