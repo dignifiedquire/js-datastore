@@ -24,11 +24,19 @@ type Test = {
 
 module.exports = (stores/* : Array<Test> */) => {
   describe('datastore', () => {
+    // $FlowFixMe
     stores.forEach((s) => describe(s.name, () => {
       const createStore = s.create
 
-      if (s.close) {
-        after(s.close)
+      const cleanup = (store, done) => {
+        if (typeof s.close === 'function') {
+          series([
+            (cb) => store.close(cb),
+            (cb) => s.close(cb)
+          ], done)
+        } else {
+          store.close(done)
+        }
       }
 
       describe('put', () => {
@@ -39,7 +47,7 @@ module.exports = (stores/* : Array<Test> */) => {
         })
 
         afterEach((done) => {
-          store.close(done)
+          cleanup(store, done)
         })
 
         it('simple', (done) => {
@@ -79,7 +87,7 @@ module.exports = (stores/* : Array<Test> */) => {
         })
 
         afterEach((done) => {
-          store.close(done)
+          cleanup(store, done)
         })
 
         it('simple', (done) => {
@@ -103,7 +111,7 @@ module.exports = (stores/* : Array<Test> */) => {
         })
 
         afterEach((done) => {
-          store.close(done)
+          cleanup(store, done)
         })
 
         it('simple', (done) => {
@@ -167,7 +175,7 @@ module.exports = (stores/* : Array<Test> */) => {
         })
 
         afterEach((done) => {
-          store.close(done)
+          cleanup(store, done)
         })
 
         it('simple', (done) => {
@@ -194,9 +202,9 @@ module.exports = (stores/* : Array<Test> */) => {
           ], done)
         })
 
-        it('many (3 * 200)', (done) => {
+        it('many (3 * 400)', (done) => {
           const b = store.batch()
-          const count = 200
+          const count = 400
           for (let i = 0; i < count; i++) {
             b.put(new Key(`/a/hello${i}`), crypto.randomBytes(32))
             b.put(new Key(`/q/hello${i}`), crypto.randomBytes(64))
@@ -276,7 +284,7 @@ module.exports = (stores/* : Array<Test> */) => {
         })
 
         after((done) => {
-          store.close(done)
+          cleanup(store, done)
         })
 
         tests.forEach((t) => it(t[0], (done) => {

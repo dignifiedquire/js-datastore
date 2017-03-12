@@ -24,7 +24,9 @@ class LevelDatastore {
   /* :: db: levelup */
 
   constructor (path /* : string */, opts /* : ?LevelOptions */) {
-    this.db = levelup(path, Object.assign({}, opts, {
+    this.db = levelup(path, Object.assign({}, {
+      compression: false // same default as go
+    }, opts, {
       valueEncoding: 'binary'
     }))
   }
@@ -87,6 +89,7 @@ class LevelDatastore {
     if (q.keysOnly != null) {
       values = !q.keysOnly
     }
+
     const iter = this.db.db.iterator({
       keys: true,
       values: values,
@@ -95,21 +98,20 @@ class LevelDatastore {
 
     const rawStream = (end, cb) => {
       if (end) {
-        iter.end(err => {
+        return iter.end((err) => {
           cb(err || end)
         })
-        return
       }
 
       iter.next((err, key, value) => {
         if (err) {
-          cb(err)
-          return
+          return cb(err)
         }
 
         if (err == null && key == null && value == null) {
-          cb(true)
-          return
+          return iter.end((err) => {
+            cb(err || true)
+          })
         }
 
         const res /* : QueryEntry<Buffer> */ = {
