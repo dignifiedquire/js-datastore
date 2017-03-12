@@ -23,8 +23,12 @@ const uuid = require('uuid/v4')
 class Key {
   /* :: _string: string */
 
-  constructor (s /* : string */, clean /* : bool */ = true) {
+  constructor (s /* : string */, clean /* : ?bool */) {
     this._string = s
+    if (clean == null) {
+      clean = true
+    }
+
     if (clean) {
       this.clean()
     }
