@@ -8,9 +8,7 @@ const Key = require('./key')
 const sh = require('./shard')
 const KeytransformStore = require('./keytransform')
 
-import type {Datastore, Batch, Query, QueryResult, Callback} from './'
-
-import type {ShardV1} from './shard'
+/* :: import type {Datastore, Batch, Query, QueryResult, Callback} from './' */
 
 /**
  * Backend independent abstraction of go-ds-flatfs.
@@ -18,25 +16,26 @@ import type {ShardV1} from './shard'
  * Wraps another datastore such that all values are stored
  * sharded according to the given sharding function.
  */
+/* :: import type {ShardV1} from './shard' */
 class ShardingDatastore {
-  shard: ShardV1
-  child: Datastore<Buffer>
+  /* :: shard: ShardV1 */
+  /* :: child: Datastore<Buffer> */
 
-  constructor (store: Datastore<Buffer>, shard: ShardV1) {
+  constructor (store /* : Datastore<Buffer> */, shard /* : ShardV1 */) {
     this.child = new KeytransformStore(store, {
-      convert (key: Key): Key {
+      convert (key /* : Key */) /* : Key */ {
         const parent = new Key(shard.fun(key.toString()))
         return parent.child(key)
       },
-      invert (key: Key): Key {
+      invert (key /* : Key */) /* : Key */ {
         return Key.withNamespaces(key.list().slice(1))
       }
     })
     this.shard = shard
   }
 
-  static createOrOpen (store: Datastore<Buffer>, shard: ShardV1, callback: Callback<ShardingDatastore>): void {
-    ShardingDatastore.create(store, shard, (err) => {
+  static createOrOpen (store /* : Datastore<Buffer> */, shard /* : ShardV1 */, callback /* : Callback<ShardingDatastore> */) /* : void */ {
+    ShardingDatastore.create(store, shard, err => {
       if (err && err.message !== 'datastore exists') {
         return callback(err)
       }
@@ -45,16 +44,13 @@ class ShardingDatastore {
     })
   }
 
-  static open (store: Datastore<Buffer>, callback: Callback<ShardingDatastore>): void {
-    waterfall([
-      (cb) => sh.readShardFun('/', store, cb),
-      (shard, cb) => {
-        cb(null, new ShardingDatastore(store, shard))
-      }
-    ], callback)
+  static open (store /* : Datastore<Buffer> */, callback /* : Callback<ShardingDatastore> */) /* : void */ {
+    waterfall([cb => sh.readShardFun('/', store, cb), (shard, cb) => {
+      cb(null, new ShardingDatastore(store, shard))
+    }], callback)
   }
 
-  static create (store: Datastore<Buffer>, shard: ShardV1, callback: Callback<void>): void {
+  static create (store /* : Datastore<Buffer> */, shard /* : ShardV1 */, callback /* : Callback<void> */) /* : void */ {
     const shardKey = new Key(sh.SHARDING_FN)
     const shardReadmeKey = new Key(sh.README_FN)
 
@@ -65,10 +61,7 @@ class ShardingDatastore {
 
       if (!exists) {
         const put = typeof store.putRaw === 'function' ? store.putRaw.bind(store) : store.put.bind(store)
-        return parallel([
-          (cb) => put(shardKey, new Buffer(shard.toString() + '\n'), cb),
-          (cb) => put(shardReadmeKey, new Buffer(sh.readme), cb)
-        ], (err) => callback(err))
+        return parallel([cb => put(shardKey, new Buffer(shard.toString() + '\n'), cb), cb => put(shardReadmeKey, new Buffer(sh.readme), cb)], err => callback(err))
       }
 
       sh.readShardFun('/', store, (err, diskShard) => {
@@ -87,31 +80,31 @@ class ShardingDatastore {
     })
   }
 
-  put (key: Key, val: Buffer, callback: Callback<void>): void {
+  put (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
     this.child.put(key, val, callback)
   }
 
-  get (key: Key, callback: Callback<Buffer>): void {
+  get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
     this.child.get(key, callback)
   }
 
-  has (key: Key, callback: Callback<bool>): void {
+  has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
     this.child.has(key, callback)
   }
 
-  delete (key: Key, callback: Callback<void>): void {
+  delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
     this.child.delete(key, callback)
   }
 
-  batch (): Batch<Buffer> {
+  batch () /* : Batch<Buffer> */ {
     return this.child.batch()
   }
 
-  query (q: Query<Buffer>): QueryResult<Buffer> {
+  query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
     return this.child.query(q)
   }
 
-  close (callback: Callback<void>): void {
+  close (callback /* : Callback<void> */) /* : void */ {
     this.child.close(callback)
   }
 }

@@ -1,6 +1,7 @@
 /* @flow */
 'use strict'
 
+/* ::
 import type Key from './key'
 
 // -- Basics
@@ -54,3 +55,5 @@ export type QueryEntry<Value> = {
 export type Filter<Value> = (QueryEntry<Value>, Callback<bool>) => void
 
 export type Order<Value> = (QueryResult<Value>, Callback<QueryResult<Value>>) => void
+
+*/

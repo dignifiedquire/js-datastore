@@ -2,8 +2,6 @@
 /* eslint-env mocha */
 'use strict'
 
-require('babel-register')
-
 const expect = require('chai').expect
 const series = require('async/series')
 const each = require('async/each')

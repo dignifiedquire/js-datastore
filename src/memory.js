@@ -1,7 +1,7 @@
 /* @flow */
 'use strict'
 
-import type {Batch, Query, QueryResult, Callback} from './'
+/* :: import type {Batch, Query, QueryResult, Callback} from './' */
 
 const pull = require('pull-stream')
 const setImmediate = require('async/setImmediate')
@@ -11,19 +11,19 @@ const asyncSort = require('./utils').asyncSort
 const Key = require('./key')
 
 class MemoryDatastore {
-  data: {[key: string]: Buffer}
+  /* :: data: {[key: string]: Buffer} */
 
   constructor () {
     this.data = {}
   }
 
-  put (key: Key, val: Buffer, callback: Callback<void>): void {
+  put (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
     this.data[key.toString()] = val
 
     setImmediate(callback)
   }
 
-  get (key: Key, callback: Callback<Buffer>): void {
+  get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
     this.has(key, (err, exists) => {
       if (err) {
         return callback(err)
@@ -37,13 +37,13 @@ class MemoryDatastore {
     })
   }
 
-  has (key: Key, callback: Callback<bool>): void {
+  has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
     setImmediate(() => {
       callback(null, this.data[key.toString()] !== undefined)
     })
   }
 
-  delete (key: Key, callback: Callback<void>): void {
+  delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
     delete this.data[key.toString()]
 
     setImmediate(() => {
@@ -51,24 +51,24 @@ class MemoryDatastore {
     })
   }
 
-  batch (): Batch<Buffer> {
+  batch () /* : Batch<Buffer> */ {
     let puts = []
     let dels = []
 
     return {
-      put (key: Key, value: Buffer): void {
+      put (key /* : Key */, value /* : Buffer */) /* : void */ {
         puts.push([key, value])
       },
-      delete (key: Key): void {
+      delete (key /* : Key */) /* : void */ {
         dels.push(key)
       },
-      commit: (callback: Callback<void>): void => {
-        puts.forEach((v) => {
+      commit: (callback /* : Callback<void> */) /* : void */ => {
+        puts.forEach(v => {
           this.data[v[0].toString()] = v[1]
         })
 
         puts = []
-        dels.forEach((key) => {
+        dels.forEach(key => {
           delete this.data[key.toString()]
         })
         dels = []
@@ -78,19 +78,16 @@ class MemoryDatastore {
     }
   }
 
-  query (q: Query<Buffer>): QueryResult<Buffer> {
-    let tasks = [
-      pull.keys(this.data),
-      pull.map((k) => ({
-        key: new Key(k),
-        value: this.data[k]
-      }))
-    ]
+  query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
+    let tasks = [pull.keys(this.data), pull.map(k => ({
+      key: new Key(k),
+      value: this.data[k]
+    }))]
 
     let filters = []
 
     if (q.prefix != null) {
-      const {prefix} = q
+      const { prefix } = q
       filters.push((e, cb) => cb(null, e.key.toString().startsWith(prefix)))
     }
 
@@ -98,10 +95,10 @@ class MemoryDatastore {
       filters = filters.concat(q.filters)
     }
 
-    tasks = tasks.concat(filters.map((f) => asyncFilter(f)))
+    tasks = tasks.concat(filters.map(f => asyncFilter(f)))
 
     if (q.orders != null) {
-      tasks = tasks.concat(q.orders.map((o) => asyncSort(o)))
+      tasks = tasks.concat(q.orders.map(o => asyncSort(o)))
     }
 
     if (q.offset != null) {
@@ -115,13 +112,13 @@ class MemoryDatastore {
     }
 
     if (q.keysOnly === true) {
-      tasks.push(pull.map((e) => ({key: e.key})))
+      tasks.push(pull.map(e => ({ key: e.key })))
     }
 
     return pull.apply(null, tasks)
   }
 
-  close (callback: Callback<void>): void {
+  close (callback /* : Callback<void> */) /* : void */ {
     setImmediate(callback)
   }
 }

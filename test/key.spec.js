@@ -2,8 +2,6 @@
 /* eslint-env mocha */
 'use strict'
 
-require('babel-register')
-
 const expect = require('chai').expect
 const path = require('path')
 

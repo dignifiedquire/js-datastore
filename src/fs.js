@@ -1,7 +1,7 @@
 /* @flow */
 'use strict'
 
-import type {Batch, Query, QueryResult, Callback} from './'
+/* :: import type {Batch, Query, QueryResult, Callback} from './' */
 
 const fs = require('graceful-fs')
 const pull = require('pull-stream')
@@ -17,17 +17,11 @@ const asyncFilter = require('./utils').asyncFilter
 const asyncSort = require('./utils').asyncSort
 const Key = require('./key')
 
-export type FsInputOptions = {
+/* :: export type FsInputOptions = {
   createIfMissing?: bool,
   errorIfExists?: bool,
   extension?: string
-}
-
-type FsOptions = {
-  createIfMissing: bool,
-  errorIfExists: bool,
-  extension: string
-}
+} */
 
 /**
  * A datastore backed by the file system.
@@ -35,11 +29,16 @@ type FsOptions = {
  * Keys need to be sanitized before use, as they are written
  * to the file system as is.
  */
+/* :: type FsOptions = {
+  createIfMissing: bool,
+  errorIfExists: bool,
+  extension: string
+} */
 class FsDatastore {
-  path: string
-  opts: FsOptions
+  /* :: path: string */
+  /* :: opts: FsOptions */
 
-  constructor (location: string, opts: ?FsInputOptions) {
+  constructor (location /* : string */, opts /* : ?FsInputOptions */) {
     this.path = path.resolve(location)
     this.opts = Object.assign({}, {
       createIfMissing: true,
@@ -74,7 +73,7 @@ class FsDatastore {
    * @private
    */
   _create () {
-    mkdirp.sync(this.path, {fs: fs})
+    mkdirp.sync(this.path, { fs: fs })
   }
 
   /**
@@ -100,7 +99,7 @@ class FsDatastore {
    *
    * @private
    */
-  _encode (key: Key): {dir: string, file: string} {
+  _encode (key /* : Key */) /* : {dir: string, file: string} */ {
     const parent = key.parent().toString()
     const dir = path.join(this.path, parent)
     const name = key.toString().slice(parent.length)
@@ -117,7 +116,7 @@ class FsDatastore {
    *
    * @private
    */
-  _decode (file: string): Key {
+  _decode (file /* : string */) /* : Key */ {
     const ext = this.opts.extension
     if (path.extname(file) !== ext) {
       throw new Error(`Invalid extension: ${path.extname(file)}`)
@@ -126,27 +125,21 @@ class FsDatastore {
     return new Key(file.slice(this.path.length, -ext.length))
   }
 
-  put (key: Key, val: Buffer, callback: Callback<void>): void {
+  put (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
     const parts = this._encode(key)
-    series([
-      (cb) => mkdirp(parts.dir, {fs: fs}, cb),
-      (cb) => writeFile(parts.file, val, cb)
-    ], callback)
+    series([cb => mkdirp(parts.dir, { fs: fs }, cb), cb => writeFile(parts.file, val, cb)], callback)
   }
 
   /**
    * Write to the file system without extension
    */
-  putRaw (key: Key, val: Buffer, callback: Callback<void>): void {
+  putRaw (key /* : Key */, val /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
     const parts = this._encode(key)
     const file = parts.file.slice(0, -this.opts.extension.length)
-    series([
-      (cb) => mkdirp(parts.dir, {fs: fs}, cb),
-      (cb) => writeFile(file, val, cb)
-    ], callback)
+    series([cb => mkdirp(parts.dir, { fs: fs }, cb), cb => writeFile(file, val, cb)], callback)
   }
 
-  get (key: Key, callback: Callback<Buffer>): void {
+  get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
     const parts = this._encode(key)
     fs.readFile(parts.file, callback)
   }
@@ -154,51 +147,46 @@ class FsDatastore {
   /**
    * Reat from the file system without extension.
    */
-  getRaw (key: Key, callback: Callback<Buffer>): void {
+  getRaw (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
     const parts = this._encode(key)
     const file = parts.file.slice(0, -this.opts.extension.length)
     fs.readFile(file, callback)
   }
 
-  has (key: Key, callback: Callback<bool>): void {
+  has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
     const parts = this._encode(key)
-    fs.access(parts.file, (err) => {
+    fs.access(parts.file, err => {
       callback(null, !err)
     })
   }
 
-  delete (key: Key, callback: Callback<void>): void {
+  delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
     const parts = this._encode(key)
     fs.unlink(parts.file, callback)
   }
 
-  batch (): Batch<Buffer> {
+  batch () /* : Batch<Buffer> */ {
     const puts = []
     const deletes = []
     return {
-      put (key: Key, value: Buffer): void {
-        puts.push({key: key, value: value})
+      put (key /* : Key */, value /* : Buffer */) /* : void */ {
+        puts.push({ key: key, value: value })
       },
-      delete (key: Key): void {
+      delete (key /* : Key */) /* : void */ {
         deletes.push(key)
       },
-      commit: (callback: (err: ?Error) => void) => {
-        series([
-          (cb) => each(puts, (p, cb) => {
-            this.put(p.key, p.value, cb)
-          }, cb),
-          (cb) => each(deletes, (k, cb) => {
-            this.delete(k, cb)
-          }, cb)
-        ], callback)
+      commit: (callback /* : (err: ?Error) => void */) => {
+        series([cb => each(puts, (p, cb) => {
+          this.put(p.key, p.value, cb)
+        }, cb), cb => each(deletes, (k, cb) => {
+          this.delete(k, cb)
+        }, cb)], callback)
       }
     }
   }
 
-  query (q: Query<Buffer>): QueryResult<Buffer> {
-    let tasks = [
-      glob(path.join(this.path, '**', '*' + this.opts.extension))
-    ]
+  query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
+    let tasks = [glob(path.join(this.path, '**', '*' + this.opts.extension))]
 
     if (!q.keysOnly) {
       tasks.push(pull.asyncMap((f, cb) => {
@@ -213,13 +201,13 @@ class FsDatastore {
         })
       }))
     } else {
-      tasks.push(pull.map((f) => ({key: this._decode(f)})))
+      tasks.push(pull.map(f => ({ key: this._decode(f) })))
     }
 
     let filters = []
 
     if (q.prefix != null) {
-      const {prefix} = q
+      const { prefix } = q
       filters.push((e, cb) => cb(null, e.key.toString().startsWith(prefix)))
     }
 
@@ -227,10 +215,10 @@ class FsDatastore {
       filters = filters.concat(q.filters)
     }
 
-    tasks = tasks.concat(filters.map((f) => asyncFilter(f)))
+    tasks = tasks.concat(filters.map(f => asyncFilter(f)))
 
     if (q.orders != null) {
-      tasks = tasks.concat(q.orders.map((o) => asyncSort(o)))
+      tasks = tasks.concat(q.orders.map(o => asyncSort(o)))
     }
 
     if (q.offset != null) {
@@ -246,7 +234,7 @@ class FsDatastore {
     return pull.apply(null, tasks)
   }
 
-  close (callback: (err: ?Error) => void): void {
+  close (callback /* : (err: ?Error) => void */) /* : void */ {
     setImmediate(callback)
   }
 }

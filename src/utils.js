@@ -21,15 +21,12 @@ exports.asyncFilter = function (test) {
         } else {
           read(abort, () => {
             // if we are still busy, wait for the test to complete.
-            if (busy) abortCb = cb
-            else cb(abort)
+            if (busy) abortCb = cb; else cb(abort)
           })
         }
       } else {
         read(null, (end, data) => {
-          if (end) cb(end)
-          else if (aborted) cb(aborted)
-          else {
+          if (end) cb(end); else if (aborted) cb(aborted); else {
             busy = true
             test(data, (err, valid) => {
               busy = false

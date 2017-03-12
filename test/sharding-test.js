@@ -3,8 +3,6 @@
 /* eslint max-nested-callbacks: ["error", 8] */
 'use strict'
 
-require('babel-register')
-
 const expect = require('chai').expect
 const series = require('async/series')
 const parallel = require('async/parallel')

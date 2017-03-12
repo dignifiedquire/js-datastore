@@ -21,9 +21,9 @@ const uuid = require('uuid/v4')
  *
  */
 class Key {
-  _string: string
+  /* :: _string: string */
 
-  constructor (s: string, clean: bool = true) {
+  constructor (s /* : string */, clean /* : bool */ = true) {
     this._string = s
     if (clean) {
       this.clean()
@@ -40,7 +40,7 @@ class Key {
 
   // waiting on https://github.com/facebook/flow/issues/2286
   // $FlowFixMe
-  get [Symbol.toStringTag] (): string {
+  get [Symbol.toStringTag] () /* : string */ {
     return `[Key ${this._string}]`
   }
 
@@ -52,7 +52,7 @@ class Key {
    * // => Key('/one/two')
    *
    */
-  static withNamespaces (list: Array<string>): Key {
+  static withNamespaces (list /* : Array<string> */) /* : Key */ {
     return new Key(list.join('/'))
   }
 
@@ -64,7 +64,7 @@ class Key {
    * // => Key('/f98719ea086343f7b71f32ea9d9d521d')
    *
    */
-  static random (): Key {
+  static random () /* : Key */ {
     return new Key(uuid().replace(/-/g, ''))
   }
 
@@ -91,7 +91,7 @@ class Key {
   /**
    * Check if the given key is sorted lower than ourself.
    */
-  less (key: Key): bool {
+  less (key /* : Key */) /* : bool */ {
     const list1 = this.list()
     const list2 = key.list()
 
@@ -120,14 +120,14 @@ class Key {
    * new Key('/Comedy/MontyPython/Actor:JohnCleese').reverse()
    * // => Key('/Actor:JohnCleese/MontyPython/Comedy')
    */
-  reverse (): Key {
+  reverse () /* : Key */ {
     return Key.withNamespaces(this.list().slice().reverse())
   }
 
   /**
    * Returns the `namespaces` making up this Key.
    */
-  namespaces (): Array<string> {
+  namespaces () /* : Array<string> */ {
     return this.list()
   }
 
@@ -138,7 +138,7 @@ class Key {
    * // => 'Actor:JohnCleese'
    *
    */
-  baseNamespace (): string {
+  baseNamespace () /* : string */ {
     const ns = this.namespaces()
     return ns[ns.length - 1]
   }
@@ -151,7 +151,7 @@ class Key {
    * // => ['Comedy', 'MontyPythong', 'Actor:JohnCleese']
    *
    */
-  list (): Array<string> {
+  list () /* : Array<string> */ {
     return this._string.split('/').slice(1)
   }
 
@@ -163,7 +163,7 @@ class Key {
    * // => 'Actor'
    *
    */
-  type (): string {
+  type () /* : string */ {
     return namespaceType(this.baseNamespace())
   }
   /**
@@ -173,7 +173,7 @@ class Key {
    * new Key('/Comedy/MontyPython/Actor:JohnCleese').name()
    * // => 'JohnCleese'
    */
-  name (): string {
+  name () /* : string */ {
     return namespaceValue(this.baseNamespace())
   }
 
@@ -182,7 +182,7 @@ class Key {
    * new Key('/Comedy/MontyPython/Actor').instance('JohnClesse')
    * // => Key('/Comedy/MontyPython/Actor:JohnCleese')
    */
-  instance (s: string): Key {
+  instance (s /* : string */) /* : Key */ {
     return new Key(this._string + ':' + s)
   }
 
@@ -194,7 +194,7 @@ class Key {
    * // => Key('/Comedy/MontyPython/Actor')
    *
    */
-  path (): Key {
+  path () /* : Key */ {
     return new Key(this.parent().toString() + '/' + this.type())
   }
 
@@ -206,7 +206,7 @@ class Key {
    * // => Key("/Comedy/MontyPython")
    *
    */
-  parent (): Key {
+  parent () /* : Key */ {
     const list = this.list()
     if (list.length === 1) {
       return new Key('/', false)
@@ -223,7 +223,7 @@ class Key {
    * // => Key('/Comedy/MontyPython/Actor:JohnCleese')
    *
    */
-  child (key: Key): Key {
+  child (key /* : Key */) /* : Key */ {
     if (this.toString() === '/') {
       return key
     } else if (key.toString() === '/') {
@@ -241,7 +241,7 @@ class Key {
    * // => true
    *
    */
-  isAncestorOf (other: Key): bool {
+  isAncestorOf (other /* : Key */) /* : bool */ {
     if (other.toString() === this.toString()) {
       return false
     }
@@ -257,7 +257,7 @@ class Key {
    * // => true
    *
    */
-  isDecendantOf (other: Key): bool {
+  isDecendantOf (other /* : Key */) /* : bool */ {
     if (other.toString() === this.toString()) {
       return false
     }
@@ -268,7 +268,7 @@ class Key {
   /**
    * Returns wether this key has only one namespace.
    */
-  isTopLevel (): bool {
+  isTopLevel () /* : bool */ {
     return this.list().length === 1
   }
 }
@@ -276,7 +276,7 @@ class Key {
 /**
  * The first component of a namespace. `foo` in `foo:bar`
  */
-function namespaceType (ns: string): string {
+function namespaceType (ns /* : string */) /* : string */ {
   const parts = ns.split(':')
   if (parts.length < 2) {
     return ''
@@ -287,7 +287,7 @@ function namespaceType (ns: string): string {
 /**
  * The last component of a namespace, `baz` in `foo:bar:baz`.
  */
-function namespaceValue (ns: string): string {
+function namespaceValue (ns /* : string */) /* : string */ {
   const parts = ns.split(':')
   return parts[parts.length - 1]
 }

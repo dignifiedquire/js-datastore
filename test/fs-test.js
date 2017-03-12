@@ -2,8 +2,6 @@
 /* eslint-env mocha */
 'use strict'
 
-require('babel-register')
-
 const pull = require('pull-stream')
 const path = require('path')
 const expect = require('chai').expect

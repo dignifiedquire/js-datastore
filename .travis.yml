@@ -15,7 +15,7 @@ matrix:
 script:
   - yarn lint
   - yarn flow
-  - yarn test:node
+  - yarn test
 
 before_script:
   - export DISPLAY=:99.0

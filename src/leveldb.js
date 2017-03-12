@@ -1,7 +1,7 @@
 /* @flow */
 'use strict'
 
-import type {Callback, Batch, Query, QueryResult, QueryEntry} from './'
+/* :: import type {Callback, Batch, Query, QueryResult, QueryEntry} from './' */
 
 const pull = require('pull-stream')
 const levelup = require('levelup')
@@ -10,35 +10,34 @@ const asyncFilter = require('./utils').asyncFilter
 const asyncSort = require('./utils').asyncSort
 const Key = require('./key')
 
-export type LevelOptions = {
+/**
+ * A datastore backed by leveldb.
+ */
+/* :: export type LevelOptions = {
   createIfMissing?: bool,
   errorIfExists?: bool,
   compression?: bool,
   cacheSize?: number,
   db?: Object
-}
-
-/**
- * A datastore backed by leveldb.
- */
+} */
 class LevelDatastore {
-  db: levelup
+  /* :: db: levelup */
 
-  constructor (path: string, opts: ?LevelOptions) {
+  constructor (path /* : string */, opts /* : ?LevelOptions */) {
     this.db = levelup(path, Object.assign({}, opts, {
       valueEncoding: 'binary'
     }))
   }
 
-  put (key: Key, value: Buffer, callback: Callback<void>): void {
+  put (key /* : Key */, value /* : Buffer */, callback /* : Callback<void> */) /* : void */ {
     this.db.put(key.toString(), value, callback)
   }
 
-  get (key: Key, callback: Callback<Buffer>): void {
+  get (key /* : Key */, callback /* : Callback<Buffer> */) /* : void */ {
     this.db.get(key.toString(), callback)
   }
 
-  has (key: Key, callback: Callback<bool>): void {
+  has (key /* : Key */, callback /* : Callback<bool> */) /* : void */ {
     this.db.get(key.toString(), (err, res) => {
       if (err) {
         if (err.notFound) {
@@ -53,37 +52,37 @@ class LevelDatastore {
     })
   }
 
-  delete (key: Key, callback: Callback<void>): void {
+  delete (key /* : Key */, callback /* : Callback<void> */) /* : void */ {
     this.db.del(key.toString(), callback)
   }
 
-  close (callback: Callback<void>): void {
+  close (callback /* : Callback<void> */) /* : void */ {
     this.db.close(callback)
   }
 
-  batch (): Batch<Buffer> {
+  batch () /* : Batch<Buffer> */ {
     const ops = []
     return {
-      put: (key: Key, value: Buffer): void => {
+      put: (key /* : Key */, value /* : Buffer */) /* : void */ => {
         ops.push({
           type: 'put',
           key: key.toString(),
           value: value
         })
       },
-      delete: (key: Key): void => {
+      delete: (key /* : Key */) /* : void */ => {
         ops.push({
           type: 'del',
           key: key.toString()
         })
       },
-      commit: (callback: Callback<void>): void => {
+      commit: (callback /* : Callback<void> */) /* : void */ => {
         this.db.batch(ops, callback)
       }
     }
   }
 
-  query (q: Query<Buffer>): QueryResult<Buffer> {
+  query (q /* : Query<Buffer> */) /* : QueryResult<Buffer> */ {
     let values = true
     if (q.keysOnly != null) {
       values = !q.keysOnly
@@ -96,7 +95,7 @@ class LevelDatastore {
 
     const rawStream = (end, cb) => {
       if (end) {
-        iter.end((err) => {
+        iter.end(err => {
           cb(err || end)
         })
         return
@@ -113,12 +112,12 @@ class LevelDatastore {
           return
         }
 
-        const res: QueryEntry<Buffer> = {
+        const res /* : QueryEntry<Buffer> */ = {
           key: new Key(key)
         }
 
         if (values) {
-          res.value = value
+          res.value = new Buffer(value)
         }
 
         cb(null, res)
@@ -129,7 +128,7 @@ class LevelDatastore {
     let filters = []
 
     if (q.prefix != null) {
-      const {prefix} = q
+      const { prefix } = q
       filters.push((e, cb) => cb(null, e.key.toString().startsWith(prefix)))
     }
 
@@ -137,10 +136,10 @@ class LevelDatastore {
       filters = filters.concat(q.filters)
     }
 
-    tasks = tasks.concat(filters.map((f) => asyncFilter(f)))
+    tasks = tasks.concat(filters.map(f => asyncFilter(f)))
 
     if (q.orders != null) {
-      tasks = tasks.concat(q.orders.map((o) => asyncSort(o)))
+      tasks = tasks.concat(q.orders.map(o => asyncSort(o)))
     }
 
     if (q.offset != null) {
