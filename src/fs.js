@@ -134,9 +134,30 @@ class FsDatastore {
     ], callback)
   }
 
+  /**
+   * Write to the file system without extension
+   */
+  putRaw (key: Key, val: Buffer, callback: Callback<void>): void {
+    const parts = this._encode(key)
+    const file = parts.file.slice(0, -this.opts.extension.length)
+    series([
+      (cb) => mkdirp(parts.dir, {fs: fs}, cb),
+      (cb) => writeFile(file, val, cb)
+    ], callback)
+  }
+
   get (key: Key, callback: Callback<Buffer>): void {
     const parts = this._encode(key)
     fs.readFile(parts.file, callback)
+  }
+
+  /**
+   * Reat from the file system without extension.
+   */
+  getRaw (key: Key, callback: Callback<Buffer>): void {
+    const parts = this._encode(key)
+    const file = parts.file.slice(0, -this.opts.extension.length)
+    fs.readFile(file, callback)
   }
 
   has (key: Key, callback: Callback<bool>): void {

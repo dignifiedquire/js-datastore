@@ -9,10 +9,14 @@ const expect = require('chai').expect
 const series = require('async/series')
 const parallel = require('async/parallel')
 const waterfall = require('async/waterfall')
+const pull = require('pull-stream')
+const fs = require('fs')
+const path = require('path')
 
 const Key = require('../src/key')
 const ShardingStore = require('../src/sharding')
 const MemoryStore = require('../src/memory')
+const FsStore = require('../src/fs')
 const sh = require('../src/shard')
 
 describe('ShardingStore', () => {
@@ -81,5 +85,29 @@ describe('ShardingStore', () => {
         })
       ], done)
     })
+  })
+
+  it('interop', (done) => {
+    const repodir = path.join(__dirname, '/test-repo/blocks')
+    const fstore = new FsStore(repodir)
+    const key = new Key('CIQGFTQ7FSI2COUXWWLOQ45VUM2GUZCGAXLWCTOKKPGTUWPXHBNIVOY')
+    const expected = fs.readFileSync(path.join(repodir, 'VO', key.toString() + '.data'))
+
+    waterfall([
+      (cb) => ShardingStore.open(fstore, cb),
+      (flatfs, cb) => parallel([
+        (cb) => pull(
+          flatfs.query({}),
+          pull.collect(cb)
+        ),
+        (cb) => flatfs.get(key, cb)
+      ], (err, res) => {
+        expect(err).to.not.exist
+        expect(res[0]).to.have.length(23)
+        expect(res[1]).to.be.eql(expected)
+
+        cb()
+      })
+    ], done)
   })
 })

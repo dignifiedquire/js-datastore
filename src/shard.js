@@ -121,7 +121,9 @@ function parseShardFun (str: string): ShardV1 { // eslint-disable-line
 // eslint-disable-next-line
 exports.readShardFun = (path: string, store: Datastore<Buffer>, callback: Callback<ShardV1>): void => {
   const key = new Key(path).child(new Key(SHARDING_FN))
-  store.get(key, (err, res) => {
+  const get = typeof store.getRaw === 'function' ? store.getRaw.bind(store) : store.get.bind(store)
+
+  get(key, (err, res) => {
     if (err) {
       return callback(err)
     }

@@ -3,6 +3,8 @@
 'use strict'
 
 require('babel-register')
+
+const pull = require('pull-stream')
 const path = require('path')
 const expect = require('chai').expect
 const mkdirp = require('mkdirp')
@@ -59,6 +61,19 @@ describe('FsDatastore', () => {
       fs._decode(fs._encode(new Key('hello/world/test:other')).file)
     ).to.eql(
       new Key('hello/world/test:other')
+    )
+  })
+
+  it('query', (done) => {
+    const fs = new FsStore(path.join(__dirname, 'test-repo/blocks'))
+
+    pull(
+      fs.query({}),
+      pull.collect((err, res) => {
+        expect(err).to.not.exist
+        expect(res).to.have.length(23)
+        done()
+      })
     )
   })
 })
