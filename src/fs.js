@@ -207,7 +207,7 @@ class FsDatastore {
     let filters = []
 
     if (q.prefix != null) {
-      const { prefix } = q
+      const prefix = q.prefix
       filters.push((e, cb) => cb(null, e.key.toString().startsWith(prefix)))
     }
 
